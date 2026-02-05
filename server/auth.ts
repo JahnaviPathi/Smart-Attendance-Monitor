@@ -55,7 +55,7 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   // rest stays SAME
-}
+
 
 
   passport.use(
