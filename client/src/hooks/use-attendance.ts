@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl } from "@shared/routes";
-import { z } from "zod";
+import { api } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 
-type MarkAttendanceInput = z.infer<typeof api.attendance.mark.input>;
+type MarkAttendanceInput = typeof api.attendance.mark.input._type;
 
 export function useAttendance() {
   const queryClient = useQueryClient();
@@ -12,38 +11,55 @@ export function useAttendance() {
   const markAttendanceMutation = useMutation({
     mutationFn: async (data: MarkAttendanceInput) => {
       const validated = api.attendance.mark.input.parse(data);
-const res = await fetch(`/api${api.attendance.mark.path}`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  credentials: "include", // ⭐ REQUIRED
-  body: JSON.stringify(validated),
-});
 
+      const res = await fetch(api.attendance.mark.path, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(validated),
+      });
 
       if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || "Failed to mark attendance");
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Attendance failed");
       }
-      return api.attendance.mark.responses[201].parse(await res.json());
+
+      return res.json();
     },
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.attendance.history.path] });
-      toast({ title: "Attendance Marked", description: "Your presence and wellbeing have been recorded." });
+      queryClient.invalidateQueries({
+        queryKey: [api.attendance.history.path],
+      });
+      toast({
+        title: "Attendance Marked",
+        description: "Check-in successful",
+      });
     },
+
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   const historyQuery = useQuery({
     queryKey: [api.attendance.history.path],
     queryFn: async () => {
-const res = await fetch(`/api${api.attendance.history.path}`, {
-  credentials: "include", // ⭐ REQUIRED
-});
+      const res = await fetch(api.attendance.history.path, {
+        credentials: "include",
+      });
 
-      if (!res.ok) throw new Error("Failed to fetch history");
-      return api.attendance.history.responses[200].parse(await res.json());
+      if (!res.ok) {
+        throw new Error("Failed to load history");
+      }
+
+      return res.json();
     },
   });
 
