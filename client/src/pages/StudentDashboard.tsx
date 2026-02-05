@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { WebcamCapture } from "@/components/WebcamCapture";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAttendance } from "@/hooks/use-attendance";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Loader2, Smile, Meh, Frown } from "lucide-react";
 
@@ -16,6 +17,13 @@ export default function StudentDashboard() {
   const [image, setImage] = useState<string>("");
   const { markAttendance } = useAttendance();
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (user?.role === "teacher") {
+      setLocation("/teacher");
+    }
+  }, [user, setLocation]);
   
   const [formData, setFormData] = useState({
     understanding: 3,
