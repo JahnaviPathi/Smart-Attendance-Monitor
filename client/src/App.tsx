@@ -18,9 +18,19 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       
       {/* Student Routes */}
-      <Route path="/dashboard">
-        {() => <ProtectedRoute component={StudentDashboard} allowedRoles={['student', 'teacher']} />}
-      </Route>
+<Route path="/dashboard">
+  {() => (
+    <ProtectedRoute
+      component={({ user }) =>
+        user.role === "teacher"
+          ? <TeacherDashboard />
+          : <StudentDashboard />
+      }
+      allowedRoles={["student", "teacher"]}
+    />
+  )}
+</Route>
+
       <Route path="/history">
         {() => <ProtectedRoute component={StudentHistory} allowedRoles={['student']} />}
       </Route>
