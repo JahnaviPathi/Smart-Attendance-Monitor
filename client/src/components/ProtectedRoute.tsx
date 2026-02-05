@@ -30,5 +30,5 @@ export function ProtectedRoute({ component: Component, allowedRoles }: Protected
     return <Redirect to="/dashboard" />;
   }
 
-  return <Component />;
+  return <Component user={user} />;
 }
