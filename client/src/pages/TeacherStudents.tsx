@@ -20,10 +20,22 @@ const classSections = Array.from(
 
 
 
-  const filtered = students?.filter(s => 
-    s.name.toLowerCase().includes(search.toLowerCase()) || 
-    s.rollNumber?.includes(search)
-  );
+const filtered = students?.filter((s) => {
+  const searchLower = search.toLowerCase();
+
+  const matchesSearch =
+    s.name.toLowerCase().includes(searchLower) ||
+    s.rollNumber?.toLowerCase().includes(searchLower) ||
+    s.classSection?.toLowerCase().includes(searchLower);
+
+  const matchesClass =
+    classSection === ""
+      ? true
+      : s.classSection === classSection;
+
+  return matchesSearch && matchesClass;
+});
+
 
   return (
     <div className="flex h-screen bg-slate-50">
