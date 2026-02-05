@@ -12,10 +12,11 @@ const [classSection, setClassSection] = useState("");
 const classSections = Array.from(
   new Set(
     (students ?? [])
-      .map((s) => s.classSection)
+      .map((s) => s.classSection?.toUpperCase())
       .filter(Boolean)
   )
 );
+
 
 
 
@@ -31,7 +32,8 @@ const filtered = students?.filter((s) => {
   const matchesClass =
     classSection === ""
       ? true
-      : s.classSection === classSection;
+      : s.classSection?.toUpperCase() === classSection;
+
 
   return matchesSearch && matchesClass;
 });
@@ -100,9 +102,12 @@ const filtered = students?.filter((s) => {
                   <td className="px-6 py-4 text-slate-500">{student.rollNumber || '-'}</td>
                   <td className="px-6 py-4 text-slate-500">{student.classSection || '-'}</td>
                   <td className="px-6 py-4 text-right">
-                    <Link href={`/students/${student.id}`} className="text-primary hover:underline font-medium">
-                      View Report
-                    </Link>
+          <Link href={`/students/${student.id}`}>
+  <a className="text-primary hover:underline font-medium">
+    View Report
+  </a>
+</Link>
+
                   </td>
                 </tr>
               ))}
