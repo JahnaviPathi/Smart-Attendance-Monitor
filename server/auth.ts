@@ -1,118 +1,97 @@
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import { type Express } from "express";
-import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
-import { storage } from "./storage";
-import { type User } from "@shared/schema";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, type CreateUserRequest } from "@shared/routes";
+import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 
-const scryptAsync = promisify(scrypt);
+export function useAuth() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
+  const userQuery = useQuery({
+    queryKey: [api.auth.me.path],
+    queryFn: async () => {
+      const res = await fetch(api.auth.me.path);
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error("Failed to fetch user");
+      return api.auth.me.responses[200].parse(await res.json());
+    },
+    retry: false,
+  });
 
-async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
-}
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: z.infer<typeof api.auth.login.input>) => {
+      const res = await fetch(api.auth.login.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+      
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("Invalid username or password");
+        throw new Error("Login failed");
+      }
+      return api.auth.login.responses[200].parse(await res.json());
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData([api.auth.me.path], user);
+      toast({ title: "Welcome back", description: `Signed in as ${user.name}` });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Login failed", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    },
+  });
 
-export function setupAuth(app: Express) {
-  const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "super_secret_session_key",
-    resave: false,
-    saveUninitialized: false,
-    store: (session as any).MemoryStore(), // Simple memory store for MVP
+  const registerMutation = useMutation({
+    mutationFn: async (data: CreateUserRequest) => {
+      // Validate with schema first just to be safe, though form usually handles it
+      const validated = api.auth.register.input.parse(data);
+      
+      const res = await fetch(api.auth.register.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validated),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || "Registration failed");
+      }
+      return api.auth.register.responses[201].parse(await res.json());
+    },
+    onSuccess: () => {
+      toast({ title: "Registration successful", description: "Please sign in with your new account" });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Registration failed", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(api.auth.logout.path, { method: "POST" });
+      if (!res.ok) throw new Error("Logout failed");
+    },
+    onSuccess: () => {
+      queryClient.setQueryData([api.auth.me.path], null);
+      // Clear all queries to prevent stale data leaking
+      queryClient.invalidateQueries();
+      toast({ title: "Logged out", description: "See you next time" });
+    },
+  });
+
+  return {
+    user: userQuery.data,
+    isLoading: userQuery.isLoading,
+    login: loginMutation,
+    register: registerMutation,
+    logout: logoutMutation,
   };
-
-  if (app.get("env") === "production") {
-    app.set("trust proxy", 1);
-  }
-
-  app.use(session(sessionSettings));
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
-        return done(null, user);
-      }
-    }),
-  );
-
-  passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser(async (id: number, done) => {
-    const user = await storage.getUser(id);
-    done(null, user);
-  });
-
-  app.post("/api/register", async (req, res, next) => {
-    try {
-      const { username, password, role, name, rollNumber, classSection, teacherSecretCode } = req.body;
-
-      // Check if user exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).send("Username (Email) already exists");
-      }
-
-      // Role specific checks
-      if (role === 'student') {
-        if (!rollNumber) return res.status(400).send("Roll Number is required for students");
-        const existingRoll = await storage.getUserByRollNumber(rollNumber);
-        if (existingRoll) return res.status(400).send("Roll Number already exists");
-      } else if (role === 'teacher') {
-        // Verify secret code
-        // Hardcoded for MVP as per plan
-        const SECRET_CODE = "teach123"; 
-        if (teacherSecretCode !== SECRET_CODE) {
-          return res.status(403).send("Invalid Teacher Secret Code");
-        }
-      } else {
-        return res.status(400).send("Invalid role");
-      }
-
-      const hashedPassword = await hashPassword(password);
-      const user = await storage.createUser({
-        username,
-        password: hashedPassword,
-        role,
-        name,
-        rollNumber: role === 'student' ? rollNumber : null,
-        classSection: role === 'student' ? classSection : null,
-      });
-
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(user);
-      });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
-  });
-
-  app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
-    });
-  });
-
-  app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
-  });
 }
