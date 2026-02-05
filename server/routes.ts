@@ -111,13 +111,20 @@ const { imageUrl, questionnaire } =
     });
   });
   
-  app.get(api.teacher.students.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "teacher") {
-      return res.status(401).send("Unauthorized");
-    }
-    const students = await storage.getAllStudents();
-    res.json(students);
-  });
+app.get(api.teacher.students.path, async (req, res) => {
+  if (!req.isAuthenticated() || req.user!.role !== "teacher") {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const { classSection } = req.query;
+
+  const students = classSection
+    ? await storage.getStudentsByClass(String(classSection))
+    : await storage.getAllStudents();
+
+  res.json(students);
+});
+
   
   app.get(api.teacher.studentHistory.path, async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== "teacher") {
