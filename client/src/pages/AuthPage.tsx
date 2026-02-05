@@ -38,7 +38,7 @@ export default function AuthPage() {
             <div className="h-10 w-10 bg-primary rounded-lg flex items-center justify-center">
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-xl font-serif font-bold">EduSense</h1>
+            <h1 className="text-xl font-serif font-bold">VIEW(A)</h1>
           </div>
         </div>
 
@@ -53,7 +53,7 @@ export default function AuthPage() {
         </div>
 
         <div className="z-10 text-sm text-slate-500">
-          © 2024 EduSense System. All rights reserved.
+          © 2026 VIEW(A) System. All rights reserved.
         </div>
       </div>
 
@@ -61,7 +61,7 @@ export default function AuthPage() {
       <div className="flex items-center justify-center p-6 bg-slate-50">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center lg:hidden mb-8">
-            <h1 className="text-2xl font-serif font-bold text-slate-900">EduSense</h1>
+            <h1 className="text-2xl font-serif font-bold text-slate-900">VIEW(A)</h1>
             <p className="text-slate-500">Welcome back</p>
           </div>
 
