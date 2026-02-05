@@ -12,7 +12,7 @@ export function useAttendance() {
   const markAttendanceMutation = useMutation({
     mutationFn: async (data: MarkAttendanceInput) => {
       const validated = api.attendance.mark.input.parse(data);
-const res = await fetch(api.attendance.mark.path, {
+const res = await fetch(`/api${api.attendance.mark.path}`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   credentials: "include", // ⭐ REQUIRED
@@ -38,7 +38,7 @@ const res = await fetch(api.attendance.mark.path, {
   const historyQuery = useQuery({
     queryKey: [api.attendance.history.path],
     queryFn: async () => {
-const res = await fetch(api.attendance.history.path, {
+const res = await fetch(`/api${api.attendance.history.path}`, {
   credentials: "include", // ⭐ REQUIRED
 });
 
