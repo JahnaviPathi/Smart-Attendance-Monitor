@@ -1,0 +1,249 @@
+Smart Attendance and Wellbeing Monitoring System
+1. Introduction
+
+The Smart Attendance and Wellbeing Monitoring System is a web-based application that records student attendance along with stress and wellbeing evaluation. The system uses role-based authentication, face capture, questionnaire-based stress assessment, and a teacher dashboard to provide complete visibility of attendance and wellbeing data in a secure and ethical manner.
+
+2. User Roles
+
+The system shall support two user roles:
+
+Student
+
+Teacher
+
+Each role shall have clearly defined and restricted access permissions.
+
+3. Authentication & Role-Based Access Requirements
+3.1 Login and Registration Interface
+
+The system shall provide a single authentication interface displaying:
+
+Sign In (Login)
+
+Sign Up (Register)
+
+Both options shall always be visible to users, similar to standard platforms.
+
+The system shall not force registration before login.
+
+3.2 Student Registration Requirements
+
+During student registration, the system shall collect:
+
+Full Name
+
+Roll Number (mandatory)
+
+Class / Section
+
+Email ID
+
+Password
+
+The roll number shall uniquely identify a student within a class.
+
+If a user attempts to register with an already existing email or roll number:
+
+The system shall display:
+“Account already exists. Please sign in.”
+
+3.3 Teacher Registration & Verification
+
+Teacher registration shall require:
+
+Full Name
+
+Email ID
+
+Password
+
+Teacher Secret Code
+
+The system shall verify the secret code before assigning the teacher role.
+
+If the secret code is invalid:
+
+Teacher account creation shall be denied.
+
+This mechanism prevents students from falsely creating teacher accounts.
+
+3.4 Role-Based Authorization
+
+User roles shall be stored securely in the database.
+
+Students shall access only student-related modules.
+
+Teachers shall access only dashboard-related modules.
+
+Unauthorized access attempts shall be blocked.
+
+4. Student Module Requirements
+4.1 Student Login
+
+Registered students shall log in using valid credentials.
+
+On successful login, students shall be redirected to the attendance and wellbeing check-in module.
+
+4.2 Attendance via Face Capture
+
+The system shall activate the device camera after student login.
+
+The system shall capture a face image of the student.
+
+Attendance shall be marked only after successful face capture.
+
+Each attendance record shall include:
+
+Student Name
+
+Roll Number
+
+Timestamp
+
+Attendance status (Present)
+
+Captured face image
+
+4.3 Stress & Wellbeing Evaluation
+
+The system shall evaluate stress using two complementary methods:
+
+A. Face-Based Analysis
+
+Facial features shall be analyzed to estimate:
+
+Stress indicators
+
+Sleepiness level
+
+Mood state
+
+B. Questionnaire-Based Assessment
+
+The questionnaire shall include:
+
+Understanding level of the topic
+
+Sleepiness level
+
+Current stress level
+
+Mood selection
+
+4.4 Final Stress Score Calculation
+
+The system shall compute a final stress score (0–100) by combining:
+
+Face-based analysis result
+
+Questionnaire responses
+
+Stress Level Interpretation Table
+Score Range	Interpretation
+0–30	Low Stress
+31–60	Moderate Stress
+61–100	High Stress
+
+The final stress score shall be mapped to qualitative levels for easier interpretation by teachers.
+
+4.5 Student Data Access
+
+Students shall be able to view:
+
+Their attendance history
+
+Their stress scores
+
+Students shall not modify or delete any records.
+
+5. Teacher Module Requirements
+5.1 Teacher Login
+
+Only verified teachers shall be allowed to log in.
+
+On successful login, teachers shall be redirected to the dashboard.
+
+5.2 Teacher Dashboard
+
+The teacher dashboard shall provide:
+
+Class-wise attendance overview
+
+Student-wise attendance and stress records
+
+Filters based on:
+
+Class
+
+Roll Number
+
+Date range
+
+5.3 Individual Student Monitoring
+
+For a selected student (using roll number), teachers shall be able to view:
+
+Complete attendance history
+
+All login timestamps
+
+Face images per attendance
+
+Stress scores per session
+
+Questionnaire responses
+
+Stress trends over time
+
+6. Database Requirements
+
+The system shall use a cloud-based database for persistent storage.
+
+Data shall be organized into:
+
+User records
+
+Attendance records
+
+Stress evaluation records
+
+Each record shall be linked using:
+
+Unique User ID
+
+Roll Number
+
+7. Security & Data Privacy Requirements
+7.1 Security
+
+Role-based access control shall be enforced at all levels.
+
+Students shall access only their own data.
+
+Teachers shall have read-only access to student data.
+
+All communication shall occur over secure HTTPS connections.
+
+7.2 Data Privacy Statement
+
+Face images and wellbeing data shall be used only for academic monitoring purposes.
+
+Such data shall not be shared with third parties.
+
+The system shall ensure confidentiality and ethical handling of sensitive student information.
+
+8. Technology Stack
+
+Frontend: React / HTML / CSS / JavaScript
+
+Backend: Node.js (or Flask)
+
+Database: Cloud Database (Firebase / MongoDB)
+
+Face Capture: Web Camera API
+
+ML Models: Pre-trained facial analysis models
+
+9. Conclusion
+
+The Smart Attendance and Wellbeing Monitoring System provides a secure, ethical, and human-centered approach to attendance tracking by integrating facial analysis, questionnaire-based stress evaluation, roll-number-based identification, and a verified teacher dashboard for effective academic monitoring. 
