@@ -12,6 +12,14 @@ import TeacherStudents from "@/pages/TeacherStudents";
 import StudentDetail from "@/pages/StudentDetail";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
+
+function DashboardRouter({ user }: { user: any }) {
+  return user.role === "teacher"
+    ? <TeacherDashboard />
+    : <StudentDashboard />;
+}
+
+
 function Router() {
   return (
     <Switch>
@@ -21,11 +29,7 @@ function Router() {
 <Route path="/dashboard">
   {() => (
     <ProtectedRoute
-      component={({ user }) =>
-        user.role === "teacher"
-          ? <TeacherDashboard />
-          : <StudentDashboard />
-      }
+      component={DashboardRouter}
       allowedRoles={["student", "teacher"]}
     />
   )}
