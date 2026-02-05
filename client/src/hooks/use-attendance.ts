@@ -13,10 +13,12 @@ export function useAttendance() {
     mutationFn: async (data: MarkAttendanceInput) => {
       const validated = api.attendance.mark.input.parse(data);
       const res = await fetch(api.attendance.mark.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validated),
-      });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
+  body: JSON.stringify(validated),
+});
+
 
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
@@ -36,11 +38,10 @@ export function useAttendance() {
   const historyQuery = useQuery({
     queryKey: [api.attendance.history.path],
     queryFn: async () => {
-      const res = await fetch(api.attendance.history.path);
-      if (!res.ok) throw new Error("Failed to fetch history");
-      return api.attendance.history.responses[200].parse(await res.json());
-    },
-  });
+      const res = await fetch(api.attendance.history.path, {
+  credentials: "include",
+});
+
 
   return {
     markAttendance: markAttendanceMutation,
