@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@shared/routes";
+import { api, buildUrl } from "@shared/routes";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,10 +13,10 @@ export function useAttendance() {
     mutationFn: async (data: MarkAttendanceInput) => {
       const validated = api.attendance.mark.input.parse(data);
 
-      const res = await fetch(api.attendance.mark.path, {
+      const res = await fetch(buildUrl(api.attendance.mark.path), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        credentials: "include", // REQUIRED for session
         body: JSON.stringify(validated),
       });
 
@@ -25,17 +25,16 @@ export function useAttendance() {
         throw new Error(error.message || "Failed to mark attendance");
       }
 
-      return await res.json();
+      return api.attendance.mark.responses[201].parse(await res.json());
     },
 
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [api.attendance.history.path],
       });
-
       toast({
-        title: "Attendance submitted",
-        description: "Your check-in was recorded successfully.",
+        title: "Attendance Marked",
+        description: "Your presence and wellbeing have been recorded.",
       });
     },
 
@@ -51,12 +50,13 @@ export function useAttendance() {
   const historyQuery = useQuery({
     queryKey: [api.attendance.history.path],
     queryFn: async () => {
-      const res = await fetch(api.attendance.history.path, {
+      const res = await fetch(buildUrl(api.attendance.history.path), {
         credentials: "include",
       });
 
       if (!res.ok) throw new Error("Failed to fetch history");
-      return await res.json();
+
+      return api.attendance.history.responses[200].parse(await res.json());
     },
   });
 
