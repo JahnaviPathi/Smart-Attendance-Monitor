@@ -26,7 +26,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
     
     try {
-      const { imageUrl, questionnaire } = api.attendance.mark.input.parse(req.body);
+      const attendanceInput = z.object({
+  imageUrl: z.string().optional(),
+  questionnaire: z.object({
+    understanding: z.number().min(1).max(5),
+    sleepiness: z.number().min(1).max(5),
+    stress: z.number().min(1).max(5),
+    mood: z.string(),
+  }),
+});
+
+const { imageUrl, questionnaire } =
+  attendanceInput.parse(req.body);
+
       
       // --- MOCK AI ANALYSIS ---
       const expressions = ['neutral', 'happy', 'stressed', 'tired'];
