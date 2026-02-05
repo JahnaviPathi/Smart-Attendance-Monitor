@@ -53,19 +53,18 @@ export const api = {
       },
     },
   },
-  attendance: {
-    mark: {
-      method: 'POST' as const,
-      path: '/api/attendance',
-      input: z.object({
-        imageUrl: z.string(),
-        questionnaire: z.object({
-          understanding: z.number().min(1).max(5),
-          sleepiness: z.number().min(1).max(5),
-          stress: z.number().min(1).max(5),
-          mood: z.string(),
-        }),
+attendance: {
+  mark: {
+    input: z.object({
+      imageUrl: z.string().min(1),
+      questionnaire: z.object({
+        understanding: z.number().min(1).max(5),
+        sleepiness: z.number().min(1).max(5),
+        stress: z.number().min(1).max(5),
+        mood: z.string(),
       }),
+    }),
+
       responses: {
         201: z.custom<typeof attendanceRecords.$inferSelect>(),
         400: errorSchemas.validation,
