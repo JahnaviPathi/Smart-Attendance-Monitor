@@ -36,7 +36,7 @@ export function Sidebar() {
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="font-bold font-serif text-lg tracking-tight">EduSense</h1>
+            <h1 className="font-bold font-serif text-lg tracking-tight">VIEW(A)</h1>
             <p className="text-xs text-slate-400">Wellbeing Monitor</p>
           </div>
         </div>
