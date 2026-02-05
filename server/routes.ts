@@ -21,9 +21,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // === ATTENDANCE ===
   
   app.post(api.attendance.mark.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "student") {
-      return res.status(401).send("Unauthorized");
-    }
+if (!req.isAuthenticated()) {
+  return res.status(401).json({ message: "Not authenticated" });
+}
+
+if (req.user!.role !== "student") {
+  return res.status(403).json({ message: "Forbidden" });
+}
+
     
     try {
       const attendanceInput = z.object({
@@ -91,9 +96,14 @@ const { imageUrl, questionnaire } =
   // === TEACHER ===
   
   app.get(api.teacher.stats.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "teacher") {
-      return res.status(401).send("Unauthorized");
-    }
+if (!req.isAuthenticated()) {
+  return res.status(401).json({ message: "Not authenticated" });
+}
+
+if (req.user!.role !== "teacher") {
+  return res.status(403).json({ message: "Forbidden" });
+}
+
     
     const students = await storage.getAllStudents();
     const records = await storage.getAllAttendance();
