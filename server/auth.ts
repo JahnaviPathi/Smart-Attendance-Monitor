@@ -5,9 +5,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { type User } from "@shared/schema";
 import cors from "cors";
-
 
 const scryptAsync = promisify(scrypt);
 
@@ -25,23 +23,11 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "super_secret_session_key",
-    resave: false,
-    saveUninitialized: false,
-    store: new session.MemoryStore(),
-    cookie: {
-      httpOnly: true,
-      secure: app.get("env") === "production",
-      sameSite: app.get("env") === "production" ? "none" : "lax",
-    },
-  };
-
   if (app.get("env") === "production") {
     app.set("trust proxy", 1);
   }
 
-  // ✅ ADD THIS
+  // ✅ CORS FIRST (before session)
   app.use(
     cors({
       origin: true,
@@ -49,66 +35,67 @@ export function setupAuth(app: Express) {
     })
   );
 
-  // ✅ THEN session
-  app.use(session(sessionSettings));
+  // ✅ SESSION
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "super_secret_session_key",
+      resave: false,
+      saveUninitialized: false,
+      store: new session.MemoryStore(),
+      cookie: {
+        httpOnly: true,
+        secure: app.get("env") === "production",
+        sameSite: app.get("env") === "production" ? "none" : "lax",
+      },
+    })
+  );
+
+  // ✅ PASSPORT
   app.use(passport.initialize());
   app.use(passport.session());
-
-  // rest stays SAME
-
-
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       const user = await storage.getUserByUsername(username);
       if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false);
-      } else {
-        return done(null, user);
       }
-    }),
+      return done(null, user);
+    })
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+
   passport.deserializeUser(async (id: number, done) => {
     const user = await storage.getUser(id);
-    done(null, user);
+    done(null, user || false);
   });
+
+  // ===== ROUTES =====
 
   app.post("/api/register", async (req, res, next) => {
     try {
       const { username, password, role, name, rollNumber, classSection, teacherSecretCode } = req.body;
 
-      // Check if user exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).send("Username (Email) already exists");
+      if (await storage.getUserByUsername(username)) {
+        return res.status(400).json({ message: "User already exists" });
       }
 
-      // Role specific checks
-      if (role === 'student') {
-        if (!rollNumber) return res.status(400).send("Roll Number is required for students");
-        const existingRoll = await storage.getUserByRollNumber(rollNumber);
-        if (existingRoll) return res.status(400).send("Roll Number already exists");
-      } else if (role === 'teacher') {
-        // Verify secret code
-        // Hardcoded for MVP as per plan
-        const SECRET_CODE = "teach123"; 
-        if (teacherSecretCode !== SECRET_CODE) {
-          return res.status(403).send("Invalid Teacher Secret Code");
-        }
-      } else {
-        return res.status(400).send("Invalid role");
+      if (role === "teacher" && teacherSecretCode !== "teach123") {
+        return res.status(403).json({ message: "Invalid teacher code" });
       }
 
       const hashedPassword = await hashPassword(password);
+
       const user = await storage.createUser({
         username,
         password: hashedPassword,
         role,
         name,
-        rollNumber: role === 'student' ? rollNumber : null,
-        classSection: role === 'student' ? classSection : null,
+        rollNumber: role === "student" ? rollNumber : null,
+        classSection: role === "student" ? classSection : null,
       });
 
       req.login(user, (err) => {
@@ -121,18 +108,19 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+    res.json(req.user);
   });
 
-  app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
+  app.post("/api/logout", (req, res) => {
+    req.logout(() => {
       res.sendStatus(200);
     });
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
     res.json(req.user);
   });
 }
