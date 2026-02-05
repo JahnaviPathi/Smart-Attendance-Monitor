@@ -6,8 +6,18 @@ import { useState } from "react";
 import { Link } from "wouter";
 
 export default function TeacherStudents() {
-  const { data: students, isLoading } = useTeacherStudents();
-  const [search, setSearch] = useState("");
+const { data: students, isLoading } = useTeacherStudents();
+const [search, setSearch] = useState("");
+const [classSection, setClassSection] = useState("");
+const classSections = Array.from(
+  new Set(
+    students
+      ?.map((s) => s.classSection)
+      .filter(Boolean)
+  )
+);
+
+
 
   const filtered = students?.filter(s => 
     s.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -23,15 +33,34 @@ export default function TeacherStudents() {
             <h1 className="text-3xl font-serif font-bold text-slate-900">Student Directory</h1>
             <p className="text-slate-500">Manage and view detailed reports for all students.</p>
           </div>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input 
-              placeholder="Search students..." 
-              className="pl-9 bg-white"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+<div className="flex gap-4 items-center">
+  {/* Search */}
+  <div className="relative w-64">
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+    <Input 
+      placeholder="Search students..." 
+      className="pl-9 bg-white"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+  </div>
+
+  {/* Class / Section Filter */}
+  <select
+    value={classSection}
+    onChange={(e) => setClassSection(e.target.value)}
+    className="border rounded-md px-3 py-2 bg-white text-sm"
+  >
+    <option value="">All Classes</option>
+
+    {classSections.map((cls) => (
+      <option key={cls} value={cls}>
+        {cls}
+      </option>
+    ))}
+  </select>
+</div>
+
         </header>
 
         <div className="bg-white rounded-xl border border-border/50 shadow-sm overflow-hidden">
