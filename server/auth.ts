@@ -5,6 +5,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
+import { type User } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 
@@ -22,48 +23,92 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  app.set("trust proxy", 1);
+  const sessionSettings: session.SessionOptions = {
+    secret: process.env.SESSION_SECRET || "super_secret_session_key",
+    resave: false,
+    saveUninitialized: false,
+    store: (session as any).MemoryStore(), // Simple memory store for MVP
+  };
 
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || "dev_secret",
-      resave: false,
-      saveUninitialized: false,
-      store: new session.MemoryStore(),
-      cookie: {
-        httpOnly: true,
-        secure: true,      // REQUIRED on Render
-        sameSite: "none",  // REQUIRED on Render
-      },
-    })
-  );
+  if (app.get("env") === "production") {
+    app.set("trust proxy", 1);
+  }
 
+  app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       const user = await storage.getUserByUsername(username);
-      if (!user) return done(null, false);
-      if (!(await comparePasswords(password, user.password))) {
+      if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false);
+      } else {
+        return done(null, user);
       }
-      return done(null, user);
-    })
+    }),
   );
 
-  passport.serializeUser((user: any, done) => done(null, user.id));
+  passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
     const user = await storage.getUser(id);
-    done(null, user || false);
+    done(null, user);
+  });
+
+  app.post("/api/register", async (req, res, next) => {
+    try {
+      const { username, password, role, name, rollNumber, classSection, teacherSecretCode } = req.body;
+
+      // Check if user exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).send("Username (Email) already exists");
+      }
+
+      // Role specific checks
+      if (role === 'student') {
+        if (!rollNumber) return res.status(400).send("Roll Number is required for students");
+        const existingRoll = await storage.getUserByRollNumber(rollNumber);
+        if (existingRoll) return res.status(400).send("Roll Number already exists");
+      } else if (role === 'teacher') {
+        // Verify secret code
+        // Hardcoded for MVP as per plan
+        const SECRET_CODE = "teach123"; 
+        if (teacherSecretCode !== SECRET_CODE) {
+          return res.status(403).send("Invalid Teacher Secret Code");
+        }
+      } else {
+        return res.status(400).send("Invalid role");
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const user = await storage.createUser({
+        username,
+        password: hashedPassword,
+        role,
+        name,
+        rollNumber: role === 'student' ? rollNumber : null,
+        classSection: role === 'student' ? classSection : null,
+      });
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    } catch (err) {
+      next(err);
+    }
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.json(req.user);
+    res.status(200).json(req.user);
   });
 
-  app.post("/api/logout", (req, res) => {
-    req.logout(() => res.sendStatus(200));
+  app.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.sendStatus(200);
+    });
   });
 
   app.get("/api/user", (req, res) => {
