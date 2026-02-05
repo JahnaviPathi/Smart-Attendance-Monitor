@@ -19,6 +19,13 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
+    if (!user) return null;
+
+  if (user.role !== "student") {
+    return null;
+  }
+
+
   useEffect(() => {
     if (user?.role === "teacher") {
       setLocation("/teacher");
