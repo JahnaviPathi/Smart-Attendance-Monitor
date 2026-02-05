@@ -38,17 +38,23 @@ export default function StudentDashboard() {
     if (imgSrc) setTimeout(() => setStep(2), 500);
   };
 
-  const handleSubmit = () => {
-    markAttendance.mutate(
-      {
-        imageUrl: image,
-        questionnaire: formData
-      },
-      {
-        onSuccess: () => setStep(3)
-      }
-    );
-  };
+const handleSubmit = () => {
+  if (!image) {
+    alert("Please capture your photo before submitting attendance");
+    return;
+  }
+
+  markAttendance.mutate(
+    {
+      imageUrl: image,
+      questionnaire: formData
+    },
+    {
+      onSuccess: () => setStep(3)
+    }
+  );
+};
+
 
   return (
     <div className="flex h-screen bg-slate-50">
