@@ -86,12 +86,18 @@ const { imageUrl, questionnaire } =
   });
   
   app.get(api.attendance.history.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "student") {
-      return res.status(401).send("Unauthorized");
-    }
-    const records = await storage.getAttendanceByStudent(req.user!.id);
-    res.json(records);
-  });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  if (req.user!.role !== "student") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const records = await storage.getAttendanceByStudent(req.user!.id);
+  res.json(records);
+});
+
 
   // === TEACHER ===
   
@@ -122,8 +128,12 @@ if (req.user!.role !== "teacher") {
   });
   
 app.get(api.teacher.students.path, async (req, res) => {
-  if (!req.isAuthenticated() || req.user!.role !== "teacher") {
-    return res.status(401).send("Unauthorized");
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  if (req.user!.role !== "teacher") {
+    return res.status(403).json({ message: "Forbidden" });
   }
 
   const { classSection } = req.query;
@@ -135,15 +145,22 @@ app.get(api.teacher.students.path, async (req, res) => {
   res.json(students);
 });
 
+
   
-  app.get(api.teacher.studentHistory.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "teacher") {
-      return res.status(401).send("Unauthorized");
-    }
-    const studentId = parseInt(req.params.id);
-    const records = await storage.getAttendanceByStudent(studentId);
-    res.json(records);
-  });
+app.get(api.teacher.studentHistory.path, async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  if (req.user!.role !== "teacher") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const studentId = parseInt(req.params.id);
+  const records = await storage.getAttendanceByStudent(studentId);
+  res.json(records);
+});
+
 
   // SEED DATA
   if (process.env.NODE_ENV !== 'production') {
