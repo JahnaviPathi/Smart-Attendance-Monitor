@@ -11,11 +11,12 @@ const [search, setSearch] = useState("");
 const [classSection, setClassSection] = useState("");
 const classSections = Array.from(
   new Set(
-    students
-      ?.map((s) => s.classSection)
+    (students ?? [])
+      .map((s) => s.classSection)
       .filter(Boolean)
   )
 );
+
 
 
 
