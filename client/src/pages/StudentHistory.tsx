@@ -36,6 +36,7 @@ export default function StudentHistory() {
                   <tr>
                     <th className="px-6 py-4">Date</th>
                     <th className="px-6 py-4">Time</th>
+                    <th className="px-6 py-4">Photo</th>
                     <th className="px-6 py-4">Status</th>
                     <th className="px-6 py-4">Stress Score</th>
                   </tr>
@@ -48,6 +49,19 @@ export default function StudentHistory() {
                       </td>
                       <td className="px-6 py-4 text-slate-500">
                         {record.timestamp ? format(new Date(record.timestamp), "h:mm a") : "-"}
+                      </td>
+                      <td className="px-6 py-4">
+                        {record.imageUrl ? (
+                          <img 
+                            src={record.imageUrl} 
+                            alt="Your capture" 
+                            className="h-10 w-14 object-cover rounded border border-slate-200"
+                          />
+                        ) : (
+                          <div className="h-10 w-14 bg-slate-100 rounded flex items-center justify-center text-[10px] text-slate-400">
+                            N/A
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">

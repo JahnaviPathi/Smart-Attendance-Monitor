@@ -46,6 +46,7 @@ export default function StudentDetail() {
                 <thead className="text-slate-500 font-medium">
                   <tr>
                     <th className="px-6 py-3">Date</th>
+                    <th className="px-6 py-3">Photo</th>
                     <th className="px-6 py-3">Stress Score</th>
                     <th className="px-6 py-3">Mood (Self-Reported)</th>
                     <th className="px-6 py-3">Expression (AI)</th>
@@ -60,6 +61,19 @@ export default function StudentDetail() {
                       <tr key={record.id}>
                         <td className="px-6 py-4 font-medium text-slate-900">
                           {record.timestamp ? format(new Date(record.timestamp), "PPP p") : "-"}
+                        </td>
+                        <td className="px-6 py-4">
+                          {record.imageUrl ? (
+                            <img 
+                              src={record.imageUrl} 
+                              alt="Student capture" 
+                              className="h-12 w-16 object-cover rounded-md border border-slate-200"
+                            />
+                          ) : (
+                            <div className="h-12 w-16 bg-slate-100 rounded-md flex items-center justify-center text-[10px] text-slate-400">
+                              No Image
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                            <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
