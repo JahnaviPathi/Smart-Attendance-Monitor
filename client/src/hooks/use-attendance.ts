@@ -9,46 +9,60 @@ export function useAttendance() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const markAttendance = useMutation({
+  const markAttendanceMutation = useMutation({
     mutationFn: async (data: MarkAttendanceInput) => {
-      const res = await fetch(`/api${api.attendance.mark.path}`, {
+      const validated = api.attendance.mark.input.parse(data);
+
+      const res = await fetch(api.attendance.mark.path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(data),
+        body: JSON.stringify(validated),
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text);
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || "Failed to mark attendance");
       }
 
-      return res.json();
+      return await res.json();
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [api.attendance.history.path],
       });
-      toast({ title: "Attendance marked" });
+
+      toast({
+        title: "Attendance submitted",
+        description: "Your check-in was recorded successfully.",
+      });
     },
-    onError: (err: Error) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
-  const history = useQuery({
+  const historyQuery = useQuery({
     queryKey: [api.attendance.history.path],
     queryFn: async () => {
-      const res = await fetch(`/api${api.attendance.history.path}`, {
+      const res = await fetch(api.attendance.history.path, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to load history");
-      return res.json();
+
+      if (!res.ok) throw new Error("Failed to fetch history");
+      return await res.json();
     },
   });
 
   return {
-    markAttendance,
-    history: history.data,
+    markAttendance: markAttendanceMutation,
+    history: historyQuery.data,
+    isLoadingHistory: historyQuery.isLoading,
   };
 }
