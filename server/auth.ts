@@ -1,97 +1,73 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type CreateUserRequest } from "@shared/routes";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import { type Express } from "express";
+import session from "express-session";
+import cors from "cors";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { storage } from "./storage";
 
-export function useAuth() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+const scryptAsync = promisify(scrypt);
 
-  const userQuery = useQuery({
-    queryKey: [api.auth.me.path],
-    queryFn: async () => {
-      const res = await fetch(api.auth.me.path);
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error("Failed to fetch user");
-      return api.auth.me.responses[200].parse(await res.json());
-    },
-    retry: false,
+async function comparePasswords(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+export function setupAuth(app: Express) {
+  app.set("trust proxy", 1);
+
+  // ✅ REQUIRED FOR RENDER
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  );
+
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "render_secret",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: true,        // Render = HTTPS
+        sameSite: "none",    // REQUIRED
+      },
+    })
+  );
+
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      const user = await storage.getUserByUsername(username);
+      if (!user) return done(null, false);
+      const ok = await comparePasswords(password, user.password);
+      return ok ? done(null, user) : done(null, false);
+    })
+  );
+
+  passport.serializeUser((user: any, done) => done(null, user.id));
+  passport.deserializeUser(async (id: number, done) => {
+    const user = await storage.getUser(id);
+    done(null, user || false);
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: z.infer<typeof api.auth.login.input>) => {
-      const res = await fetch(api.auth.login.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
-      
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Invalid username or password");
-        throw new Error("Login failed");
-      }
-      return api.auth.login.responses[200].parse(await res.json());
-    },
-    onSuccess: (user) => {
-      queryClient.setQueryData([api.auth.me.path], user);
-      toast({ title: "Welcome back", description: `Signed in as ${user.name}` });
-    },
-    onError: (error: Error) => {
-      toast({ 
-        title: "Login failed", 
-        description: error.message, 
-        variant: "destructive" 
-      });
-    },
+  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+    res.json(req.user);
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async (data: CreateUserRequest) => {
-      // Validate with schema first just to be safe, though form usually handles it
-      const validated = api.auth.register.input.parse(data);
-      
-      const res = await fetch(api.auth.register.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validated),
-      });
-
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error.message || "Registration failed");
-      }
-      return api.auth.register.responses[201].parse(await res.json());
-    },
-    onSuccess: () => {
-      toast({ title: "Registration successful", description: "Please sign in with your new account" });
-    },
-    onError: (error: Error) => {
-      toast({ 
-        title: "Registration failed", 
-        description: error.message, 
-        variant: "destructive" 
-      });
-    },
+  app.post("/api/logout", (req, res) => {
+    req.logout(() => res.sendStatus(200));
   });
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(api.auth.logout.path, { method: "POST" });
-      if (!res.ok) throw new Error("Logout failed");
-    },
-    onSuccess: () => {
-      queryClient.setQueryData([api.auth.me.path], null);
-      // Clear all queries to prevent stale data leaking
-      queryClient.invalidateQueries();
-      toast({ title: "Logged out", description: "See you next time" });
-    },
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    res.json(req.user);
   });
-
-  return {
-    user: userQuery.data,
-    isLoading: userQuery.isLoading,
-    login: loginMutation,
-    register: registerMutation,
-    logout: logoutMutation,
-  };
 }
