@@ -1,67 +1,54 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
+import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+
+type MarkAttendanceInput = z.infer<typeof api.attendance.mark.input>;
 
 export function useAttendance() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const markAttendanceMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await fetch(api.attendance.mark.path, {
+  const markAttendance = useMutation({
+    mutationFn: async (data: MarkAttendanceInput) => {
+      const res = await fetch(`/api${api.attendance.mark.path}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(data),
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Failed to mark attendance");
+        const text = await res.text();
+        throw new Error(text);
       }
 
       return res.json();
     },
-
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [api.attendance.history.path],
       });
-      toast({
-        title: "Attendance marked",
-        description: "Check-in successful",
-      });
+      toast({ title: "Attendance marked" });
     },
-
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     },
   });
 
-  const historyQuery = useQuery({
+  const history = useQuery({
     queryKey: [api.attendance.history.path],
     queryFn: async () => {
-      const res = await fetch(api.attendance.history.path, {
+      const res = await fetch(`/api${api.attendance.history.path}`, {
         credentials: "include",
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to load history");
-      }
-
+      if (!res.ok) throw new Error("Failed to load history");
       return res.json();
     },
   });
 
   return {
-    markAttendance: markAttendanceMutation,
-    history: historyQuery.data,
-    isLoadingHistory: historyQuery.isLoading,
+    markAttendance,
+    history: history.data,
   };
 }
