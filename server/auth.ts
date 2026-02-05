@@ -6,6 +6,8 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { type User } from "@shared/schema";
+import cors from "cors";
+
 
 const scryptAsync = promisify(scrypt);
 
@@ -23,27 +25,38 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-const sessionSettings: session.SessionOptions = {
-  secret: process.env.SESSION_SECRET || "super_secret_session_key",
-  resave: false,
-  saveUninitialized: false,
-  store: new session.MemoryStore(),
-
-  cookie: {
-    httpOnly: true,
-    secure: app.get("env") === "production", // ✅ REQUIRED on Render
-    sameSite: app.get("env") === "production" ? "none" : "lax", // ✅ REQUIRED
-  },
-};
-
+  const sessionSettings: session.SessionOptions = {
+    secret: process.env.SESSION_SECRET || "super_secret_session_key",
+    resave: false,
+    saveUninitialized: false,
+    store: new session.MemoryStore(),
+    cookie: {
+      httpOnly: true,
+      secure: app.get("env") === "production",
+      sameSite: app.get("env") === "production" ? "none" : "lax",
+    },
+  };
 
   if (app.get("env") === "production") {
     app.set("trust proxy", 1);
   }
 
+  // ✅ ADD THIS
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  );
+
+  // ✅ THEN session
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // rest stays SAME
+}
+
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
