@@ -35,7 +35,16 @@ export const attendanceRecords = pgTable("attendance_records", {
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
-export const insertAttendanceSchema = createInsertSchema(attendanceRecords).omit({ id: true, timestamp: true });
+export const insertAttendanceSchema = z.object({
+  imageUrl: z.string().optional(),
+
+  questionnaireResponse: z.object({
+    understanding: z.number().min(1).max(5),
+    sleepiness: z.number().min(1).max(5),
+    stress: z.number().min(1).max(5),
+    mood: z.string(),
+  }),
+});
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
