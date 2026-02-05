@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import type { Express } from "express";
+import { type Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -22,30 +22,30 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "super_secret_session_key",
-    resave: false,
-    saveUninitialized: false,
-    store: new session.MemoryStore(),
-    cookie: {
-      httpOnly: true,
-      secure: app.get("env") === "production",
-      sameSite: app.get("env") === "production" ? "none" : "lax",
-    },
-  };
+  app.set("trust proxy", 1);
 
-  if (app.get("env") === "production") {
-    app.set("trust proxy", 1);
-  }
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "dev_secret",
+      resave: false,
+      saveUninitialized: false,
+      store: new session.MemoryStore(),
+      cookie: {
+        httpOnly: true,
+        secure: true,      // REQUIRED on Render
+        sameSite: "none",  // REQUIRED on Render
+      },
+    })
+  );
 
-  app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
+      if (!user) return done(null, false);
+      if (!(await comparePasswords(password, user.password))) {
         return done(null, false);
       }
       return done(null, user);
