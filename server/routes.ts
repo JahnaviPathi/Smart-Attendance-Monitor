@@ -21,12 +21,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // === ATTENDANCE ===
   
   app.post(api.attendance.mark.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "student") {
-      return res.status(401).send("Unauthorized");
-    }
+if (!req.isAuthenticated()) {
+  return res.status(401).json({ message: "Not authenticated" });
+}
+
+if (req.user!.role !== "student") {
+  return res.status(403).json({ message: "Forbidden" });
+}
+
     
     try {
-      const { imageUrl, questionnaire } = api.attendance.mark.input.parse(req.body);
+      const attendanceInput = z.object({
+  imageUrl: z.string().optional(),
+  questionnaire: z.object({
+    understanding: z.number().min(1).max(5),
+    sleepiness: z.number().min(1).max(5),
+    stress: z.number().min(1).max(5),
+    mood: z.string(),
+  }),
+});
+
+const { imageUrl, questionnaire } =
+  attendanceInput.parse(req.body);
+
       
       // --- MOCK AI ANALYSIS ---
       const expressions = ['neutral', 'happy', 'stressed', 'tired'];
@@ -69,19 +86,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
   
   app.get(api.attendance.history.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "student") {
-      return res.status(401).send("Unauthorized");
-    }
-    const records = await storage.getAttendanceByStudent(req.user!.id);
-    res.json(records);
-  });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  if (req.user!.role !== "student") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const records = await storage.getAttendanceByStudent(req.user!.id);
+  res.json(records);
+});
+
 
   // === TEACHER ===
   
   app.get(api.teacher.stats.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "teacher") {
-      return res.status(401).send("Unauthorized");
-    }
+if (!req.isAuthenticated()) {
+  return res.status(401).json({ message: "Not authenticated" });
+}
+
+if (req.user!.role !== "teacher") {
+  return res.status(403).json({ message: "Forbidden" });
+}
+
     
     const students = await storage.getAllStudents();
     const records = await storage.getAllAttendance();
@@ -99,22 +127,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   });
   
-  app.get(api.teacher.students.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "teacher") {
-      return res.status(401).send("Unauthorized");
-    }
-    const students = await storage.getAllStudents();
-    res.json(students);
-  });
+app.get(api.teacher.students.path, async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  if (req.user!.role !== "teacher") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const { classSection } = req.query;
+
+  const students = classSection
+    ? await storage.getStudentsByClass(String(classSection))
+    : await storage.getAllStudents();
+
+  res.json(students);
+});
+
+
   
-  app.get(api.teacher.studentHistory.path, async (req, res) => {
-    if (!req.isAuthenticated() || req.user!.role !== "teacher") {
-      return res.status(401).send("Unauthorized");
-    }
-    const studentId = parseInt(req.params.id);
-    const records = await storage.getAttendanceByStudent(studentId);
-    res.json(records);
-  });
+app.get(api.teacher.studentHistory.path, async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+
+  if (req.user!.role !== "teacher") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const studentId = parseInt(req.params.id);
+  const records = await storage.getAttendanceByStudent(studentId);
+  res.json(records);
+});
+
 
   // SEED DATA
   if (process.env.NODE_ENV !== 'production') {
@@ -147,4 +193,4 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   }
 
   return httpServer;
-} server route.ts
+}
