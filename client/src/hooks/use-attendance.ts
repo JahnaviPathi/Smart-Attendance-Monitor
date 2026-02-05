@@ -2,28 +2,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 
-type MarkAttendanceInput = typeof api.attendance.mark.input._type;
-
 export function useAttendance() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const markAttendanceMutation = useMutation({
-    mutationFn: async (data: MarkAttendanceInput) => {
-      const validated = api.attendance.mark.input.parse(data);
-
+    mutationFn: async (data: any) => {
       const res = await fetch(api.attendance.mark.path, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify(validated),
+        body: JSON.stringify(data),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Attendance failed");
+        throw new Error(err.message || "Failed to mark attendance");
       }
 
       return res.json();
@@ -34,7 +30,7 @@ export function useAttendance() {
         queryKey: [api.attendance.history.path],
       });
       toast({
-        title: "Attendance Marked",
+        title: "Attendance marked",
         description: "Check-in successful",
       });
     },
