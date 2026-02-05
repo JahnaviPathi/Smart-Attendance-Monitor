@@ -23,12 +23,19 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "super_secret_session_key",
-    resave: false,
-    saveUninitialized: false,
-    store: (session as any).MemoryStore(), // Simple memory store for MVP
-  };
+const sessionSettings: session.SessionOptions = {
+  secret: process.env.SESSION_SECRET || "super_secret_session_key",
+  resave: false,
+  saveUninitialized: false,
+  store: new session.MemoryStore(),
+
+  cookie: {
+    httpOnly: true,
+    secure: app.get("env") === "production", // ✅ REQUIRED on Render
+    sameSite: app.get("env") === "production" ? "none" : "lax", // ✅ REQUIRED
+  },
+};
+
 
   if (app.get("env") === "production") {
     app.set("trust proxy", 1);
