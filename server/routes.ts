@@ -36,7 +36,7 @@ export async function registerRoutes(
 
     try {
       const attendanceInput = z.object({
-        imageUrl: z.string().optional(),
+        imageUrl: z.string().min(1),
         questionnaire: z.object({
           understanding: z.number().min(1).max(5),
           sleepiness: z.number().min(1).max(5),
