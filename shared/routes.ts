@@ -1,6 +1,14 @@
-import { z } from 'zod';
-import { insertUserSchema, insertAttendanceSchema, users, attendanceRecords } from './schema';
+import { z } from "zod";
+import {
+  insertUserSchema,
+  insertAttendanceSchema,
+  users,
+  attendanceRecords,
+} from "./schema";
 
+/* =========================
+   ERROR SCHEMAS
+========================= */
 export const errorSchemas = {
   validation: z.object({
     message: z.string(),
@@ -17,89 +25,78 @@ export const errorSchemas = {
   }),
 };
 
+/* =========================
+   API ROUTES
+========================= */
 export const api = {
   auth: {
     register: {
-      method: 'POST' as const,
-      path: '/api/register',
-      input: insertUserSchema.extend({ teacherSecretCode: z.string().optional() }),
+      method: "POST" as const,
+      path: "/api/register",
+      input: insertUserSchema.extend({
+        teacherSecretCode: z.string().optional(),
+      }),
       responses: {
         201: z.custom<typeof users.$inferSelect>(),
         400: errorSchemas.validation,
       },
     },
+
     login: {
-      method: 'POST' as const,
-      path: '/api/login',
-      input: z.object({ username: z.string(), password: z.string() }),
+      method: "POST" as const,
+      path: "/api/login",
+      input: z.object({
+        username: z.string(),
+        password: z.string(),
+      }),
       responses: {
         200: z.custom<typeof users.$inferSelect>(),
         401: errorSchemas.unauthorized,
       },
     },
+
     logout: {
-      method: 'POST' as const,
-      path: '/api/logout',
+      method: "POST" as const,
+      path: "/api/logout",
       responses: {
         200: z.void(),
       },
     },
+
     me: {
-      method: 'GET' as const,
-      path: '/api/user',
+      method: "GET" as const,
+      path: "/api/user",
       responses: {
         200: z.custom<typeof users.$inferSelect>(),
         401: errorSchemas.unauthorized,
       },
     },
   },
-attendance: {
-  mark: {
-    method: 'POST' as const,
-    path: '/attendance/mark',
 
-    input: z.object({
-      imageUrl: z.string().min(1),
-      questionnaire: z.object({
-        understanding: z.number().min(1).max(5),
-        sleepiness: z.number().min(1).max(5),
-        stress: z.number().min(1).max(5),
-        mood: z.string(),
-      }),
-    }),
-
-    responses: {
-      201: z.custom<typeof attendanceRecords.$inferSelect>(),
-      400: errorSchemas.validation,
-    },
-  },
-
-  history: {
-    method: 'GET' as const,
-    path: '/attendance/history',
-    responses: {
-      200: z.array(z.custom<typeof attendanceRecords.$inferSelect>()),
-    },
-  },
-},
-
+  attendance: {
+    mark: {
+      method: "POST" as const,
+      path: "/api/attendance/mark",
+      input: insertAttendanceSchema,
       responses: {
         201: z.custom<typeof attendanceRecords.$inferSelect>(),
         400: errorSchemas.validation,
       },
     },
+
     history: {
-      method: 'GET' as const,
-      path: '/api/attendance/history',
+      method: "GET" as const,
+      path: "/api/attendance/history",
       responses: {
         200: z.array(z.custom<typeof attendanceRecords.$inferSelect>()),
       },
     },
   },
+
   teacher: {
     stats: {
-      method: 'GET' as const,
-      path: '/api/teacher/stats',
+      method: "GET" as const,
+      path: "/api/teacher/stats",
       responses: {
         200: z.object({
           totalStudents: z.number(),
@@ -108,16 +105,18 @@ attendance: {
         }),
       },
     },
+
     students: {
-      method: 'GET' as const,
-      path: '/api/teacher/students',
+      method: "GET" as const,
+      path: "/api/teacher/students",
       responses: {
         200: z.array(z.custom<typeof users.$inferSelect>()),
       },
     },
+
     studentHistory: {
-      method: 'GET' as const,
-      path: '/api/teacher/students/:id/history',
+      method: "GET" as const,
+      path: "/api/teacher/students/:id/history",
       responses: {
         200: z.array(z.custom<typeof attendanceRecords.$inferSelect>()),
       },
@@ -125,14 +124,20 @@ attendance: {
   },
 };
 
-export function buildUrl(path: string, params?: Record<string, string | number>): string {
+/* =========================
+   URL BUILDER
+========================= */
+export function buildUrl(
+  path: string,
+  params?: Record<string, string | number>
+): string {
   let url = path;
+
   if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (url.includes(`:${key}`)) {
-        url = url.replace(`:${key}`, String(value));
-      }
-    });
+    for (const [key, value] of Object.entries(params)) {
+      url = url.replace(`:${key}`, String(value));
+    }
   }
+
   return url;
 }
