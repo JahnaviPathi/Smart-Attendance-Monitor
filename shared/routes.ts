@@ -55,6 +55,9 @@ export const api = {
   },
 attendance: {
   mark: {
+    method: 'POST' as const,
+    path: '/attendance/mark',
+
     input: z.object({
       imageUrl: z.string().min(1),
       questionnaire: z.object({
@@ -64,6 +67,21 @@ attendance: {
         mood: z.string(),
       }),
     }),
+
+    responses: {
+      201: z.custom<typeof attendanceRecords.$inferSelect>(),
+      400: errorSchemas.validation,
+    },
+  },
+
+  history: {
+    method: 'GET' as const,
+    path: '/attendance/history',
+    responses: {
+      200: z.array(z.custom<typeof attendanceRecords.$inferSelect>()),
+    },
+  },
+},
 
       responses: {
         201: z.custom<typeof attendanceRecords.$inferSelect>(),
