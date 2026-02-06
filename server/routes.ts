@@ -32,7 +32,11 @@ export async function registerRoutes(
         classSection: z.string().nullable().optional(),
       });
 
-      const data = registerSchema.parse(req.body);
+      const data = registerSchema.parse({
+  ...req.body,
+  email: req.body.username, // 👈 FIX
+});
+
 
       const existingUser = await storage.getUserByUsername(data.username);
       if (existingUser) {
@@ -41,14 +45,15 @@ export async function registerRoutes(
 
       const hashedPassword = await hashPassword(data.password);
 
-      const user = await storage.createUser({
-        username: data.username,
-        password: hashedPassword,
-        role: data.role,
-        name: data.name,
-        rollNumber: data.role === "student" ? data.rollNumber ?? null : null,
-        classSection: data.role === "student" ? data.classSection ?? null : null,
-      });
+const user = await storage.createUser({
+  email: data.email, // 👈 REQUIRED
+  password: hashedPassword,
+  role: data.role,
+  name: data.name,
+  rollNumber: data.role === "student" ? data.rollNumber ?? null : null,
+  classSection: data.role === "student" ? data.classSection ?? null : null,
+});
+
 
       res.status(201).json({ message: "Registration successful", user });
     } catch (err) {
