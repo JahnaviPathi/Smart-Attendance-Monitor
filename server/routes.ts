@@ -25,7 +25,7 @@ export async function registerRoutes(
      ATTENDANCE
   ========================= */
 
-  app.post(`/api${api.attendance.mark.path}`, async (req, res) => {
+  app.post(api.attendance.mark.path, async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -86,7 +86,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get(`/api${api.attendance.history.path}`, async (req, res) => {
+  app.get(api.attendance.history.path, async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -103,7 +103,7 @@ export async function registerRoutes(
      TEACHER
   ========================= */
 
-  app.get(`/api${api.teacher.stats.path}`, async (req, res) => {
+  app.get(api.teacher.stats.path, async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -135,7 +135,7 @@ export async function registerRoutes(
     });
   });
 
-  app.get(`/api${api.teacher.students.path}`, async (req, res) => {
+  app.get(api.teacher.students.path, async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -153,7 +153,7 @@ export async function registerRoutes(
     res.json(students);
   });
 
-  app.get(`/api${api.teacher.studentHistory.path}`, async (req, res) => {
+  app.get(api.teacher.studentHistory.path, async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
