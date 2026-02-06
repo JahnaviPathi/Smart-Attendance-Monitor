@@ -21,6 +21,45 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
+    app.post("/api/register", async (req, res) => {
+    try {
+      const registerSchema = z.object({
+        username: z.string().email(),
+        password: z.string().min(6),
+        role: z.enum(["student", "teacher"]),
+        name: z.string(),
+        rollNumber: z.string().nullable().optional(),
+        classSection: z.string().nullable().optional(),
+      });
+
+      const data = registerSchema.parse(req.body);
+
+      const existingUser = await storage.getUserByUsername(data.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      const hashedPassword = await hashPassword(data.password);
+
+      const user = await storage.createUser({
+        username: data.username,
+        password: hashedPassword,
+        role: data.role,
+        name: data.name,
+        rollNumber: data.role === "student" ? data.rollNumber ?? null : null,
+        classSection: data.role === "student" ? data.classSection ?? null : null,
+      });
+
+      res.status(201).json({ message: "Registration successful", user });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input" });
+      }
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+
   /* =========================
      ATTENDANCE
   ========================= */
