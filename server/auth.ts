@@ -67,6 +67,43 @@ export function setupAuth(app: Express) {
     done(null, user);
   });
 
+app.post("/api/register", async (req, res) => {
+  try {
+    const { username, password, role, rollNumber, fullName } = req.body;
+
+    if (!username || !password || !role) {
+      return res.status(400).json({ message: "Invalid input" });
+    }
+
+    const existingUser = await storage.getUserByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    if (role === "student" && !rollNumber) {
+      return res.status(400).json({ message: "Roll number required" });
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    const newUser = await storage.createUser({
+      username,
+      password: hashedPassword,
+      role,
+      rollNumber: role === "student" ? rollNumber : null,
+      fullName,
+    });
+
+    res.status(201).json(newUser);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Registration failed" });
+  }
+});
+
+
+  
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.json(req.user);
   });
