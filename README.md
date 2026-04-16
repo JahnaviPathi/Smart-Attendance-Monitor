@@ -4,43 +4,54 @@
 
 This repository contains the **frontend application** of the Smart Attendance and Well-Being Monitoring System.
 
-It provides a **responsive dashboard interface** for students and administrators to interact with the system, view attendance records, and monitor well-being insights.
+It provides a responsive dashboard for managing attendance, verifying location, and visualizing student well-being insights.
 
 ---
 
 ## 🖼️ Application Screenshots
 
-### 🔐 Login Page
+### 🔐 Authentication (Login & Register)
 
-![Login Page](./media/Screenshot%202026-03-14%20101908.png)
+![Login](./media/Screenshot%202026-03-14%20101813.png)
+![Register](./media/Screenshot%202026-03-14%20101848.png)
 
-### 📊 Dashboard - College Reports
+👉 Users can securely login or create an account to access the system.
 
-![Dashboard](./media/Screenshot%202026-03-14%20102333.png)
+---
 
-### 📈 Attendance & Analytics
+### 📍 Location Verification
 
-![Analytics](./media/Screenshot%202026-03-14%20102033.png)
+![Location1](./media/Screenshot%202026-03-14%20101908.png)
+![Location2](./media/Screenshot%202026-03-14%20102039.png)
+
+👉 The system uses browser GPS to verify user presence within the campus.
+
+---
+
+### 📊 College Reports Dashboard
+
+![Reports1](./media/Screenshot%202026-03-14%20102327.png)
+![Reports2](./media/Screenshot%202026-03-14%20102333.png)
+
+👉 Displays attendance statistics, well-being scores, and analytics in a clean UI.
 
 ---
 
 ## 🎯 Features
 
-* 🔐 User Login & Authentication UI
-* 📊 Interactive Dashboard (Reports, Insights)
-* 📍 Location Access Integration (GPS via browser)
-* 😊 Well-being Data Input Forms
-* 📈 Attendance & Stress Visualization (charts & cards)
-* 📤 API Integration with Backend Services
+* 🔐 Authentication UI (Login/Register)
+* 📍 Location-based verification
+* 📊 Dashboard with reports & analytics
+* 😊 Well-being data interaction
+* 🔌 REST API integration
 
 ---
 
 ## 🏗️ Frontend Architecture
 
-The frontend follows a **component-based architecture** using React.
+The application is built using a **component-based architecture**:
 
-👉 Flow:
-UI Components → API Calls → Backend → Response → UI Update
+UI → API Calls → Backend → Response → UI Update
 
 ---
 
@@ -57,50 +68,38 @@ UI Components → API Calls → Backend → Response → UI Update
 
 ```
 client/
-│── components/     
-│── pages/          
-│── services/       
-│── assets/         
-│── App.tsx         
+│── components/
+│── pages/
+│── services/
+│── assets/
+│── App.tsx
 ```
 
 ---
 
 ## 🔄 Working Flow
 
-1. User opens the web application
-2. Login form captures user credentials
-3. Data is sent to backend via API
-4. On success → dashboard is loaded
-5. Dashboard fetches attendance & well-being data
-6. Data is displayed using charts and UI cards
+1. User logs in or registers
+2. Location is captured via browser
+3. API calls are made to backend
+4. Dashboard loads with data
+5. Reports are visualized using UI components
 
 ---
 
 ## 🔌 API Integration
 
-The frontend communicates with backend using REST APIs:
-
-* `POST /login`
-* `GET /attendance`
-* `POST /wellbeing`
-* `GET /reports`
-
----
-
-## 📊 UI Highlights
-
-* Clean dashboard design
-* Real-time data updates
-* User-friendly navigation
-* Responsive layout
+* POST /login
+* POST /register
+* GET /attendance
+* GET /reports
 
 ---
 
 ## ⚠️ Limitations
 
 * Depends on backend APIs
-* No direct data processing
+* GPS accuracy may vary
 * Requires internet connection
 
 ---
@@ -108,9 +107,9 @@ The frontend communicates with backend using REST APIs:
 ## 🔮 Future Enhancements
 
 * Improve UI/UX
-* Add notifications
-* Enhance responsiveness
-* AI insights integration
+* Add real-time updates
+* Mobile optimization
+* AI-based insights
 
 ---
 
@@ -122,6 +121,6 @@ Jahnavi Pathi
 
 ## 🎯 Conclusion
 
-The frontend delivers a **smooth and interactive experience**, enabling users to efficiently view attendance and well-being insights.
+The frontend provides an interactive and user-friendly interface for managing attendance and monitoring student well-being efficiently.
 
 ---
